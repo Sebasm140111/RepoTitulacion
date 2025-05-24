@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1061598222997",
+    "project_id": "repotitulacion",
+    "storage_bucket": "repotitulacion.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1061598222997:android:c5d8d9fee03b330545199c",
+        "android_client_info": {
+          "package_name": "com.example.proyectomoviles"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmsPOb5qySUFqJKgwTPkqUpB4cGlOJIbg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

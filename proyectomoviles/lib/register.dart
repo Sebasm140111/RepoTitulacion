@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -14,15 +15,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  void _register() {
-    // Aquí podrías agregar lógica para validar y registrar con tu backend o Firebase
-    print('Nombre: ${_nameController.text}');
-    print('Correo: ${_emailController.text}');
-    print('Cédula: ${_idController.text}');
-    print('Contraseña: ${_passwordController.text}');
+  final _auth = FirebaseAuth.instance;
 
-    // Luego rediriges a la pantalla de "pendiente de aprobación"
-    Navigator.pushNamed(context, '/pendiente_rol');
+  void _register() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (!email.endsWith('@espoch.edu.ec')) {
+      _showMessage('El correo debe pertenecer al dominio @espoch.edu.ec');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showMessage('Las contraseñas no coinciden');
+      return;
+    }
+
+    try {
+      await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      _showMessage('Registro exitoso');
+      Navigator.pushNamed(context, '/pendiente_rol');
+    } on FirebaseAuthException catch (e) {
+      _showMessage(e.message ?? 'Error al registrar');
+    }
+  }
+
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -35,11 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       color: Colors.white,
       fontSize: 14,
       shadows: [
-        Shadow(
-          offset: Offset(1, 1),
-          blurRadius: 1,
-          color: Colors.black45,
-        ),
+        Shadow(offset: Offset(1, 1), blurRadius: 1, color: Colors.black45),
       ],
     );
 
@@ -51,7 +67,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Stack para llama sobre el marco con texto centrado
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -78,113 +93,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Positioned(
                     top: 0,
                     right: 0,
-                    child: Image.asset(
-                      'assets/llama.png',
-                      height: 130,
-                    ),
+                    child: Image.asset('assets/llama.png', height: 130),
                   ),
                 ],
               ),
               const SizedBox(height: 64),
 
-              // Nombres completos
-              TextField(
-                controller: _nameController,
-                style: TextStyle(color: textoColor),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: rojo,
-                  prefixIcon: Icon(Icons.person, color: Colors.white),
-                  labelText: 'Nombres Completos',
-                  labelStyle: labelWithShadow,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: rojo),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+              _buildTextField(_nameController, Icons.person, 'Nombres Completos', rojo, textoColor, labelWithShadow),
               const SizedBox(height: 16),
-
-              // Correo electrónico
-              TextField(
-                controller: _emailController,
-                style: TextStyle(color: textoColor),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: rojo,
-                  prefixIcon: Icon(Icons.email, color: Colors.white),
-                  labelText: 'Correo Electrónico',
-                  labelStyle: labelWithShadow,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: rojo),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+              _buildTextField(_emailController, Icons.email, 'Correo Electrónico', rojo, textoColor, labelWithShadow),
               const SizedBox(height: 16),
-
-              // Cédula
-              TextField(
-                controller: _idController,
-                style: TextStyle(color: textoColor),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: rojo,
-                  prefixIcon: Icon(Icons.credit_card, color: Colors.white),
-                  labelText: 'Cédula',
-                  labelStyle: labelWithShadow,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: rojo),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+              _buildTextField(_idController, Icons.credit_card, 'Cédula', rojo, textoColor, labelWithShadow),
               const SizedBox(height: 16),
-
-              // Contraseña
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                style: TextStyle(color: textoColor),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: rojo,
-                  prefixIcon: Icon(Icons.lock, color: Colors.white),
-                  labelText: 'Contraseña',
-                  labelStyle: labelWithShadow,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: rojo),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+              _buildPasswordField(_passwordController, Icons.lock, 'Contraseña', rojo, textoColor, labelWithShadow),
               const SizedBox(height: 16),
-
-              // Confirmar contraseña
-              TextField(
-                controller: _confirmPasswordController,
-                obscureText: true,
-                style: TextStyle(color: textoColor),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: rojo,
-                  prefixIcon: Icon(Icons.lock_outline, color: Colors.white),
-                  labelText: 'Confirmar Contraseña',
-                  labelStyle: labelWithShadow,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: rojo),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+              _buildPasswordField(_confirmPasswordController, Icons.lock_outline, 'Confirmar Contraseña', rojo, textoColor, labelWithShadow),
               const SizedBox(height: 32),
 
-              // Botón registrar
               ElevatedButton(
                 onPressed: _register,
                 style: ElevatedButton.styleFrom(
@@ -198,20 +123,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Text('Registrar'),
               ),
               const SizedBox(height: 16),
-
-              // Botón regresar
               TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  '← Regresar',
-                  style: TextStyle(color: textoColor),
-                ),
+                onPressed: () => Navigator.pop(context),
+                child: Text('← Regresar', style: TextStyle(color: textoColor)),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, IconData icon, String label, Color fillColor, Color textColor, TextStyle labelStyle) {
+    return TextField(
+      controller: controller,
+      style: TextStyle(color: textColor),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: fillColor,
+        prefixIcon: Icon(icon, color: Colors.white),
+        labelText: label,
+        labelStyle: labelStyle,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: fillColor), borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(TextEditingController controller, IconData icon, String label, Color fillColor, Color textColor, TextStyle labelStyle) {
+    return TextField(
+      controller: controller,
+      obscureText: true,
+      style: TextStyle(color: textColor),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: fillColor,
+        prefixIcon: Icon(icon, color: Colors.white),
+        labelText: label,
+        labelStyle: labelStyle,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: fillColor), borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
