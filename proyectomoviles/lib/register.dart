@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -17,29 +20,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _auth = FirebaseAuth.instance;
 
-  void _register() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+ void _register() async {
+  final name = _nameController.text.trim();
+  final email = _emailController.text.trim();
+  final cedula = _idController.text.trim();
+  final password = _passwordController.text.trim();
+  final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (!email.endsWith('@espoch.edu.ec')) {
-      _showMessage('El correo debe pertenecer al dominio @espoch.edu.ec');
-      return;
-    }
-
-    if (password != confirmPassword) {
-      _showMessage('Las contraseñas no coinciden');
-      return;
-    }
-
-    try {
-      await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      _showMessage('Registro exitoso');
-      Navigator.pushNamed(context, '/pendiente_rol');
-    } on FirebaseAuthException catch (e) {
-      _showMessage(e.message ?? 'Error al registrar');
-    }
+  if (password != confirmPassword) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Las contraseñas no coinciden")),
+    );
+    return;
   }
+
+  if (!email.endsWith('@espoch.edu.ec')) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Debe usar un correo institucional")),
+    );
+    return;
+  }
+
+  try {
+    // Crear usuario en Firebase Auth
+    UserCredential userCredential = await FirebaseAuth.instance
+        .createUserWithEmailAndPassword(email: email, password: password);
+
+    // Guardar datos en Firestore
+    await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(userCredential.user!.uid)
+        .set({
+      'uid': userCredential.user!.uid,
+      'nombre': name,
+      'correo': email,
+      'cedula': cedula,
+      'rol': 'pendiente',
+      'fecha_creacion': FieldValue.serverTimestamp(),
+    });
+
+    Navigator.pushNamed(context, '/pendiente_rol');
+  } on FirebaseAuthException catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${e.message}')),
+    );
+  }
+}
 
   void _showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

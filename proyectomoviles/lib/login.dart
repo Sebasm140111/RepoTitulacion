@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -11,15 +13,61 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _login() {
-    print('Email: ${_emailController.text}');
-    print('Password: ${_passwordController.text}');
+  void _login() async {
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      // Autenticación con Firebase
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Obtener UID
+      final uid = credential.user!.uid;
+
+      // Consultar datos del usuario en Firestore
+      final doc = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
+
+      if (!doc.exists) {
+        throw FirebaseAuthException(code: 'user-data-not-found', message: 'Usuario sin datos en Firestore.');
+      }
+
+      final data = doc.data()!;
+      final rol = data['rol'];
+      final nombre = data['nombre'];
+
+      // Redirección según rol
+      if (rol == 'Administrador') {
+        Navigator.pushNamed(context, '/admin_dashboard', arguments: {'nombre': nombre});
+      } else if (rol == 'Estudiante') {
+        Navigator.pushNamed(context, '/estudiante_dashboard', arguments: {'nombre': nombre});
+      } else if (rol == 'Secretario') {
+        Navigator.pushNamed(context, '/secretario_dashboard', arguments: {'nombre': nombre});
+      } else {
+        Navigator.pushNamed(context, '/pendiente_rol');
+      }
+    } on FirebaseAuthException catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text(e.message ?? 'Ocurrió un error'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('OK'),
+            )
+          ],
+        ),
+      );
+    }
   }
 
   void _recoverPassword() {
-  Navigator.pushNamed(context, '/recover');
+    Navigator.pushNamed(context, '/recover');
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
     const textoColor = Color(0xFF403535);
     const fondoVino = Color(0xFF6E2C2C);
 
-    // Estilo de sombra para etiquetas
     TextStyle labelWithShadow = TextStyle(
       color: Colors.white,
       fontSize: 14,
@@ -48,7 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Encabezado con marco suave
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
@@ -67,14 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Imagen de la llama
               Image.asset(
                 'assets/llama.png',
                 height: 150,
               ),
               const SizedBox(height: 32),
 
-              // Campo de correo electrónico
+              // Email
               TextField(
                 controller: _emailController,
                 style: TextStyle(color: textoColor),
@@ -93,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Campo de contraseña
+              // Contraseña
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -113,13 +158,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Botón de recuperar contraseña
               Align(
                 alignment: Alignment.centerRight,
                 child: OutlinedButton.icon(
-                //onPressed: _recoverPassword,
                   onPressed: () {
-                   Navigator.pushNamed(context, '/newpass'); // Para probar la pantalla de newpass -> Se activa desde el link de correo
+                    Navigator.pushNamed(context, '/newpass');
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: rojo,
@@ -133,7 +176,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Botón de iniciar sesión con sombra
               ElevatedButton(
                 onPressed: _login,
                 style: ElevatedButton.styleFrom(
@@ -148,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Botón de registrarse
               TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/register');

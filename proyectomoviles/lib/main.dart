@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:proyectomoviles/Admin_Dashboard.dart';
 import 'login.dart';
 import 'register.dart'; 
 import 'recoverpass.dart';
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
         '/recover':(context)=>RecoverPasswordScreen(),
         '/newpass':(context)=>NewPasswordScreen(),
         '/pendiente_rol':(context)=>PendingApprovalScreen(),
+        '/admin_dashboard':(context)=>AdminHomeScreen(),
       },
     );
   }
